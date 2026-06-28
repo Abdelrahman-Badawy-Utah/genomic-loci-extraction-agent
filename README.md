@@ -135,16 +135,9 @@ Many entries were missing rsID, genomic position, or selection statistic values 
 **5. Unapproved Selection Test (1 case)**
 GYPA row included BayesScan, which is not in the approved test list. Replaced with PBS and FST from the source paper.
 
-### Post-Processing Corrections Applied
-
-All issues were identified and corrected in [`data/ALDB_v1.xlsx`](data/ALDB_v1.xlsx). The corrected file uses color coding:
-- 🟢 Green = value was fixed
-- 🟠 Orange = flagged for manual expert review
-- 🟡 Yellow = hallucinated source preserved for reference with annotation
-
 ### Recommendation for Future Runs
 
-Adding a live DOI verification step via the PubMed E-utilities or CrossRef API as an n8n node between the critic and the Google Sheets write would catch hallucinated DOIs automatically before they enter the database.
+Adding a live DOI verification step via the PubMed E-utilities or the CrossRef API as an n8n node between the critic and the Google Sheets write would automatically catch hallucinated DOIs before they enter the database.
 
 ---
 
@@ -206,9 +199,3 @@ This agent is Phase 1 of the **SALUS-ML** project — a machine learning framewo
 
 **Abdelrahman Badawy**
 Master's Student, Biomedical Informatics, University of Utah
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE)
