@@ -1,0 +1,44 @@
+# Data files (do not commit raw genomic data)
+data/raw/
+data/hgdp/
+data/cadd/
+*.vcf
+*.vcf.gz
+*.bam
+*.bam.bai
+
+# API keys and credentials
+.env
+*.env
+credentials.json
+token.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# n8n
+.n8n/
+
+# Large output files
+*.xlsx.bak
+results/raw/
