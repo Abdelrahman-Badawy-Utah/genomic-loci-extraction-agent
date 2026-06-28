@@ -1,0 +1,141 @@
+{
+  "name": "SALUS-ML Literature Review Agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-node",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const populations = [\n  { population: \"Tibetan highlanders\", environment: \"High-altitude hypoxia\" },\n  { population: \"Sherpa (Nepal)\", environment: \"High-altitude hypoxia\" },\n  { population: \"Andean Quechua/Aymara\", environment: \"High-altitude / diet\" },\n  { population: \"Ethiopian Amhara/Oromo\", environment: \"High-altitude hypoxia\" },\n  { population: \"Ladakhi Himalayan\", environment: \"High-altitude hypoxia\" },\n  { population: \"Bajau sea nomads\", environment: \"Breath-hold diving\" },\n  { population: \"Haenyeo divers (Jeju)\", environment: \"Breath-hold diving\" },\n  { population: \"Turkana (Kenya)\", environment: \"Arid heat / pastoralism\" },\n  { population: \"Daasanach (East Africa)\", environment: \"Arid heat / water stress\" },\n  { population: \"Greenlandic Inuit\", environment: \"Extreme cold / marine diet\" },\n  { population: \"Indigenous Siberians\", environment: \"Extreme cold / fat diet\" },\n  { population: \"Fuegians (Yamana/Selknam)\", environment: \"Extreme cold\" },\n  { population: \"African Pygmies (Baka/Batwa)\", environment: \"Rainforest ecology\" },\n  { population: \"Sub-Saharan Africans\", environment: \"Malaria (P. falciparum)\" },\n  { population: \"Amazonian indigenes\", environment: \"Pathogen (T. cruzi)\" },\n  { population: \"Tsimane / Moseten\", environment: \"Parasites / metabolic\" },\n  { population: \"Hadza (Tanzania)\", environment: \"Hunter-gatherer diet\" },\n  { population: \"San / Khoe-San\", environment: \"Ancient savanna hunter-gatherer\" },\n  { population: \"European pastoralists\", environment: \"Dairy pastoralism / UV\" },\n  { population: \"East Asians (Han/Japanese/Korean)\", environment: \"Agriculture / UV adaptation\" },\n  { population: \"Maasai (East Africa)\", environment: \"Dairy pastoralism\" },\n  { population: \"Polynesian / Māori / Samoan\", environment: \"Ocean crossing / food scarcity\" },\n  { population: \"Mexican indigenous\", environment: \"Pathogen / diet\" },\n  { population: \"Bedouin (Sinai desert)\", environment: \"Desert heat / dehydration\" }\n];\n\nreturn populations.map(p => ({ json: p }));"
+      },
+      "id": "populations-node",
+      "name": "Population List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "loop-node",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "wait-node",
+      "name": "Wait 60s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Search the scientific literature for adaptive loci in {{ $json.population }} population adapted to {{ $json.environment }}.\n\nFind peer-reviewed studies reporting positive selection signals (PBS, FST, iHS, XP-EHH, LSBL, CMS or equivalent) in this population. For each validated adaptive locus found, extract and return a JSON array with this exact structure:\n\n[\n  {\n    \"gene\": \"gene symbol\",\n    \"rsid\": \"rsID if reported, else null\",\n    \"chromosome\": \"chromosome number\",\n    \"position_hg38\": \"genomic position in hg38 if reported, else null\",\n    \"population\": \"{{ $json.population }}\",\n    \"environment_category\": \"{{ $json.environment }}\",\n    \"selection_tests\": \"comma-separated tests e.g. PBS, FST, iHS\",\n    \"selection_statistic_value\": \"reported value if available, else null\",\n    \"derived_allele_freq\": \"DAF in focal population if reported, else null\",\n    \"proposed_mechanism\": \"biological mechanism from the paper\",\n    \"source_doi\": \"DOI of source paper\",\n    \"source_title\": \"full title of source paper\"\n  }\n]\n\nRules:\n- Only include loci from peer-reviewed published studies\n- Only include loci with at least one statistically significant selection test\n- Only include loci where a functional mechanism is proposed\n- Return ONLY the JSON array, no explanation or extra text\n- If no qualifying loci found, return []",
+        "options": {
+          "systemMessage": "You are an expert population genomicist and scientific literature analyst working on the SALUS-ML project — a machine learning framework for classifying adaptive resilience loci across extreme-environment human populations.\n\nYou have deep knowledge of:\n- Population genetics statistics (PBS, FST, iHS, XP-EHH, LSBL, CMS)\n- The published literature on human adaptation to extreme environments\n- Genomic databases (gnomAD, dbSNP, Ensembl, UCSC)\n- Selection scan methodologies and their interpretation\n\nYour job is to identify and extract only high-confidence adaptive loci that meet ALL three of these criteria:\n1. SELECTION SIGNAL — statistically significant result from at least one published selection test\n2. ENVIRONMENTAL SPECIFICITY — derived allele is elevated in the focal population vs reference populations\n3. FUNCTIONAL MECHANISM — the source paper proposes a biological mechanism linking the locus to the selective pressure\n\nYou are rigorous and conservative. You do not include loci unless you are confident they appear in the peer-reviewed literature. You never fabricate DOIs, gene names, or statistics. If you are uncertain about a detail, you set it to null rather than guessing."
+        }
+      },
+      "id": "agent-node",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "You are a scientific reviewer for the SALUS-ML Adaptive Loci Database.\n\nReview the following extracted locus data from the AI Agent:\n{{ $json.output }}\n\nFor each locus in the array, check it against these three inclusion criteria:\n1. SELECTION SIGNAL — has at least one statistically significant selection test\n2. ENVIRONMENTAL SPECIFICITY — derived allele elevated in focal vs reference pops\n3. FUNCTIONAL MECHANISM — a biological mechanism is proposed\n\nFor each locus assign a tier:\n- Tier 1: meets all 3 criteria with strong evidence\n- Tier 2: meets all 3 criteria but with moderate evidence\n- Tier 3: meets 2 of 3 criteria with some uncertainty\n\nReturn ONLY a JSON array — no other text:\n[\n  {\n    \"gene\": \"...\", \"rsid\": \"...\", \"chromosome\": \"...\",\n    \"position_hg38\": \"...\", \"population\": \"...\",\n    \"environment_category\": \"...\", \"selection_tests\": \"...\",\n    \"selection_statistic_value\": \"...\", \"derived_allele_freq\": \"...\",\n    \"proposed_mechanism\": \"...\", \"tier\": 1,\n    \"tier_rationale\": \"one sentence explaining tier assignment\",\n    \"source_doi\": \"...\", \"source_title\": \"...\",\n    \"status\": \"validated or flagged_for_review\",\n    \"flag_reason\": \"reason if flagged, else null\",\n    \"extracted_by\": \"agent\", \"extraction_date\": \"{{ $now }}\"\n  }\n]\n\nIf a locus meets only 1 criterion, exclude it entirely.\nIf the input is an empty array, return [].\nReturn ONLY the JSON array, no explanation."
+      },
+      "id": "critic-node",
+      "name": "Critic Reviewer",
+      "type": "@n8n/n8n-nodes-langchain.lmChain",
+      "typeVersion": 1.4,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const criticOutput = $input.first().json.text;\n\nlet loci = [];\ntry {\n  const cleaned = criticOutput\n    .replace(/```json/g, '')\n    .replace(/```/g, '')\n    .trim();\n  loci = JSON.parse(cleaned);\n} catch (e) {\n  return [{ json: { error: 'Failed to parse critic output', raw: criticOutput } }];\n}\n\nif (!Array.isArray(loci) || loci.length === 0) {\n  return [{ json: { skipped: true, reason: 'No qualifying loci found' } }];\n}\n\nreturn loci.map((locus, index) => ({\n  json: {\n    locus_id: `ALDB-${Date.now()}-${index}`,\n    gene: locus.gene || null,\n    rsid: locus.rsid || null,\n    chromosome: locus.chromosome || null,\n    position_hg38: locus.position_hg38 || null,\n    population: locus.population || null,\n    environment_category: locus.environment_category || null,\n    selection_tests: locus.selection_tests || null,\n    selection_statistic_value: locus.selection_statistic_value || null,\n    derived_allele_freq: locus.derived_allele_freq || null,\n    proposed_mechanism: locus.proposed_mechanism || null,\n    tier: locus.tier || null,\n    tier_rationale: locus.tier_rationale || null,\n    source_doi: locus.source_doi || null,\n    source_title: locus.source_title || null,\n    status: locus.status || 'flagged_for_review',\n    flag_reason: locus.flag_reason || null,\n    extracted_by: 'agent',\n    extraction_date: locus.extraction_date || new Date().toISOString()\n  }\n}));"
+      },
+      "id": "parser-node",
+      "name": "JSON Parser",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "sheets-node",
+      "name": "Write to ALDB",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [1780, 300]
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [[{ "node": "Population List", "type": "main", "index": 0 }]]
+    },
+    "Population List": {
+      "main": [[{ "node": "Loop Over Items", "type": "main", "index": 0 }]]
+    },
+    "Loop Over Items": {
+      "main": [
+        [{ "node": "Write to ALDB", "type": "main", "index": 0 }],
+        [{ "node": "Wait 60s", "type": "main", "index": 0 }]
+      ]
+    },
+    "Wait 60s": {
+      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
+    },
+    "AI Agent": {
+      "main": [[{ "node": "Critic Reviewer", "type": "main", "index": 0 }]]
+    },
+    "Critic Reviewer": {
+      "main": [[{ "node": "JSON Parser", "type": "main", "index": 0 }]]
+    },
+    "JSON Parser": {
+      "main": [[{ "node": "Write to ALDB", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": "salus-ml-literature-review-agent",
+    "templateCredsSetupCompleted": false
+  },
+  "_comment": "SETUP REQUIRED: Replace YOUR_GOOGLE_SHEET_ID_HERE with your actual sheet ID. Add Gemini API credentials to both AI Agent and Critic Reviewer nodes."
+}
