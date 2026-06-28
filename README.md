@@ -17,7 +17,7 @@ For each of 24 human populations adapted to extreme environments (high altitude,
 
 ## Agent Architecture
 
-![Agent Workflow](docs/workflow_screenshot.png)
+![Agent Workflow](docs/workflow_screenshot.PNG)
 
 ```
 Manual Trigger
