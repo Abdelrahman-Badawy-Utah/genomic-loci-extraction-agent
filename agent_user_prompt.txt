@@ -1,0 +1,30 @@
+Search the scientific literature for adaptive loci in {{ $json.population }} population
+adapted to {{ $json.environment }}.
+
+Find peer-reviewed studies reporting positive selection signals (PBS, FST, iHS,
+XP-EHH, LSBL, CMS or equivalent) in this population. For each validated adaptive
+locus found, extract and return a JSON array with this exact structure:
+
+[
+  {
+    "gene": "gene symbol",
+    "rsid": "rsID if reported, else null",
+    "chromosome": "chromosome number",
+    "position_hg38": "genomic position in hg38 if reported, else null",
+    "population": "{{ $json.population }}",
+    "environment_category": "{{ $json.environment }}",
+    "selection_tests": "comma-separated tests e.g. PBS, FST, iHS",
+    "selection_statistic_value": "reported value if available, else null",
+    "derived_allele_freq": "DAF in focal population if reported, else null",
+    "proposed_mechanism": "biological mechanism from the paper",
+    "source_doi": "DOI of source paper",
+    "source_title": "full title of source paper"
+  }
+]
+
+Rules:
+- Only include loci from peer-reviewed published studies
+- Only include loci with at least one statistically significant selection test
+- Only include loci where a functional mechanism is proposed
+- Return ONLY the JSON array, no explanation or extra text
+- If no qualifying loci found, return []
